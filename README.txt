@@ -1,0 +1,1 @@
+Collection of 5 Uncoupled Harmonic Oscillators to Simulate Brain Wave Activity in Response to Alternating Current Pulses
