@@ -3,22 +3,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Timepoints vector setup:
-tf = 40.0    # this is the final time in seconds
+tf = 2.0    # this is the final time in seconds
 steps = 40000
 dt = tf/steps
 t = np.linspace(0, tf, steps + 1, endpoint=False)
 
 # Oscillator Constants:
-# Sinusoidal Constants:
-f = 1    # in Hz
-w = 2 * np.pi * f
+# Sinusoidal Constants for delta, theta, alpha, beta, gamma waves:
+f = [3.5, 6, 10, 17, 45]    # in Hz
+w = [2*np.pi*x for x in f]
 # Square Wave Constants:
-f_sqr = 0.25   # in Hz
+f_sqr = 2   # in Hz
 w_sqr = 2 * np.pi * f_sqr
 
 # Signals:
 # Sinusoidal Wave:
-wav = np.cos(w * t)
+wav = [np.cos(x*t) for x in w]
 # Square Wave:
 sqr = (signal.square(w_sqr * t) + 1) / 2  # runs from 0 to 1, instead of -1 to +1
 # Noise:
@@ -35,9 +35,12 @@ plt.figure()
 # First subplot
 idx = 1
 sgnl = wav
+leg = ['Frequency: '+str(x) for x in f]
 plt.subplot(sub_rows, sub_cols, idx)
-plt.plot(t, sgnl)
+for wave in sgnl:
+	plt.plot(t, wave)
 plt.ylim(-1.5, 1.5)
+plt.legend(leg, loc='upper right')
 
 # Second subplot
 idx = 2
