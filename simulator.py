@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Timepoints vector setup:
-tf = 16.0    # this is the final time in seconds
-steps = 40000
+tf = 100.0    # this is the final time in seconds
+steps = 400000
 dt = tf/steps
 t = np.linspace(0, tf, steps + 1, endpoint=False)
 
@@ -13,53 +13,81 @@ k = 0.1
 m = 0.01
 w = (k / m)**0.5
 f = w/(2*np.pi)  # in Hz
-b = (w/50)*0.1   # damping set to 10% of critical damping
+b = 0   # damping set to 0
 # Square Wave Constants:
-f_sqr = 2   # in Hz
+f_sqr = .1   # in Hz
 w_sqr = 2 * np.pi * f_sqr
+# Driving AC Current Sinusoidal Constants:
+#f_drv = 7.0
+w_drv = 15.0  #2 * np.pi * f_drv
+F0 = 0.001    # Amplitude
 
 # Signals:
-# Sinusoidal Wave:
+# Square Wave:
+sqr = (signal.square(w_sqr * t) + 1) / 2  # runs from 0 to 1, instead of -1 to +1
+
+# Driven Wave:
 # Calculated using Euler's Method
-# Solving: x'' = -w^2 x, where x = cos(w*t)
+# Acceleration due to damping force (proportional to velocity):
+#     b * v = m * a  -->  a = (b/m) * v
+# Acceleration due to driving force:
+#     curr = m * a  -->  a = curr/m
+# Total acceleration (F is driving force):
+# a(t) = v'(t) = -w^2 * x(t) - (b/m) * v(t) + F/m
+# Rewrite derivative: v'(t) = (v(t + dt) - v(t))/dt
+# (v(t + dt) - v(t))/dt = -w^2 * x(t) - (b/m) * v(t) + F/m
+# v(t + dt) = -w^2 * x(t) * dt + v(t) * (1 - (dt * b/m)) + F * dt/m
+# Similarly:
+# x'(t) = (x(t + dt) - x(t))/dt = v(t)
+# x(t + dt) = v(t) * dt + x(t)
 pos = np.zeros(steps + 1)
 vel = np.zeros(steps + 1)
 pos[0] = 0.01
 vel[0] = 0.05
 for i in range(0, steps):
-	vel[i+1] = (-w * dt * pos[i]) + (vel[i] * (1 - (dt * b/m)))
+	vel[i+1] = (-w * w * dt * pos[i]) + (vel[i] * (1 - (dt * b/m))) + ((dt/m) * F0 * np.cos(w_drv*i*dt))
 	pos[i+1] = dt*vel[i] + pos[i]
-# Square Wave:
-sqr = (signal.square(w_sqr * t) + 1) / 2  # runs from 0 to 1, instead of -1 to +1
+
+
+# Damped Driven Wave:
+# b was originally set to 0, we can now set it to 10% of the critical damping
+b = (w/50)*0.1
+pos_d = np.zeros(steps + 1)
+pos_d[0] = 0.01
+for i in range(0, steps):
+	vel[i+1] = (-w * w * dt * pos_d[i]) + (vel[i] * (1 - (dt * b/m))) + ((dt/m) * F0 * np.cos(w_drv*i*dt))
+	pos_d[i+1] = dt*vel[i] + pos_d[i]
+
+# Damped Driven Wave (driven by square AC pulses):
+pos_ds = np.zeros(steps + 1)
+pos_ds[0] = 0.01
+for i in range(0, steps):
+	vel[i+1] = (-w * w * dt * pos_ds[i]) + (vel[i] * (1 - (dt * b/m))) + ((dt/m) * F0 * np.cos(w_drv*i*dt) * sqr[i])
+	pos_ds[i+1] = dt*vel[i] + pos_ds[i]
+
 # Noise:
 noise = np.random.normal(0, 0.1, len(t))
 
-# Plot Constants:
-sub_rows = 3   # number of subplot rows
-sub_cols = 1   # number of subplot columns
+# x-axis
+y = np.zeros(steps + 1)
 
-
-# Create Figure
+# Create Figure 1
+# Figure 1 displays 1 oscillator driven by a constant AC current
 plt.figure()
+plt.subplot(3, 1, 1)
+#plt.plot(t, pos, label='Undamped')
+plt.plot(t, pos_d, label='10% of Critical Damping, Driven by Constant AC Current')
+plt.plot(t, y)
+plt.legend(loc='upper right')
 
-# First subplot
-idx = 1
-sgnl = pos
-plt.subplot(sub_rows, sub_cols, idx)
-plt.plot(t, sgnl)
-#plt.ylim(-1.5, 1.5)
+plt.subplot(3, 1, 2)
+plt.plot(t, pos_ds, label='10% of Critical Damping, Driven by Square AC Pulses')
+plt.plot(t, y)
+plt.legend(loc='upper right')
 
-# Second subplot
-idx = 2
-sgnl = sqr
-plt.subplot(sub_rows, sub_cols, idx)
-plt.plot(t, sgnl)
-plt.ylim(-0.5, 1.5)
-
-# Third subplot
-idx = 3
-sgnl = noise 
-plt.subplot(sub_rows, sub_cols, idx)
-plt.plot(t, sgnl)
-
+plt.subplot(3, 1, 3)
+#plt.plot(t, F0 * np.cos(w_drv*t), label='Driving Force')
+plt.plot(t, sqr * F0 * np.cos(w_drv*t), label='Driving Force, Pulses')
+plt.ylim(-0.0015, 0.0015)
+plt.legend(loc='upper right')
 plt.show()
