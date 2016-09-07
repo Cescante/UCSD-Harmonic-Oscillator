@@ -19,12 +19,19 @@ f_sqr = .1   # in Hz
 w_sqr = 2 * np.pi * f_sqr
 # Driving AC Current Sinusoidal Constants:
 #f_drv = 7.0
-w_drv = 15.0  #2 * np.pi * f_drv
+w_drv = 25.0  #2 * np.pi * f_drv
 F0 = 0.001    # Amplitude
 
 # Signals:
-# Square Wave:
-sqr = (signal.square(w_sqr * t) + 1) / 2  # runs from 0 to 1, instead of -1 to +1
+# Uneven Square Wave:
+pulse_width = 2000
+cycle_width = 10000
+sqr = np.zeros(steps + 1)
+for i in range(0, steps + 1):
+	if (i % cycle_width) < pulse_width:
+		sqr[i] = 1
+	else:
+		sqr[i] = 0
 
 # Driven Wave:
 # Calculated using Euler's Method
